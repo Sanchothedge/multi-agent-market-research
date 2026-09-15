@@ -40,6 +40,10 @@ OPENAI_API_KEY=your_openai_key
 OPENAI_MODEL=gpt-4o-mini
 ```
 
+The `.env` file is ignored by Git. Keep real keys only in that local file or
+in your shell/secret manager; never commit them or put them in `.env.example`.
+If a key is ever exposed, revoke it and create a replacement immediately.
+
 ## Run live
 
 ```bash
@@ -108,3 +112,4 @@ http://localhost:8000/preview.html
 - The project includes a working dry-run fallback for environments with billing or auth issues.
 - The live You.com endpoint returns `402 Payment Required` when the account is not authorized to use it; the dry-run path avoids that dependency for development and smoke testing.
 - The repository intentionally does not commit real API keys.
+- This project is licensed under the MIT License; see `LICENSE`.
