@@ -1,0 +1,1418 @@
+{
+  "name": "Multi-Agent Market Research",
+  "nodes": [
+    {
+      "name": "Market Research Request Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Multi-Agent Market Research",
+        "formDescription": "Review the company profile and choose a news lookback period to generate the report file.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Company name",
+              "fieldName": "company_name",
+              "fieldType": "text",
+              "defaultValue": "TheEdge LLC",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company website",
+              "fieldName": "company_website",
+              "fieldType": "text",
+              "defaultValue": "www.thedgellc.ai",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Industry",
+              "fieldName": "industry",
+              "fieldType": "text",
+              "defaultValue": "ReInvention, AI and Software Services",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Target market",
+              "fieldName": "target_market",
+              "fieldType": "textarea",
+              "defaultValue": "Financial Services, Healthcare, Life Sciences, Hitech",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Country or region",
+              "fieldName": "country_or_region",
+              "fieldType": "text",
+              "defaultValue": "Global",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "News lookback period (days)",
+              "fieldName": "news_lookback_period",
+              "fieldType": "number",
+              "placeholder": "Enter the number of days",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "path": "multi-agent-market-research",
+          "buttonLabel": "Start Research",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Your competitor research request has been received."
+            }
+          }
+        }
+      },
+      "webhookId": "690bbc73-08bc-4d69-b0a2-0d48f79cd0ed"
+    },
+    {
+      "name": "Build Research Run Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1232,
+        48
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const form = $input.item.json;\nreturn { json: { research_run_id: String($execution.id), target_company: String(form.company_name || ''), target_website: String(form.company_website || ''), status: 'running', started_at: new Date().toISOString(), industry: String(form.industry || ''), target_market: String(form.target_market || ''), country_or_region: String(form.country_or_region || ''), news_lookback_days: Math.max(1, Number(form.news_lookback_period) || 30), recipient_email: '', settings_json: JSON.stringify({ industry: form.industry || '', target_market: form.target_market || '', country_or_region: form.country_or_region || '', news_lookback_days: Math.max(1, Number(form.news_lookback_period) || 30) }) } };"
+      }
+    },
+    {
+      "name": "Create Research Run",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        -1008,
+        48
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "3iWyWWRNT2sDFLeN",
+          "cachedResultName": "Research Runs"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "research_run_id": "={{ $json.research_run_id }}",
+            "target_company": "={{ $json.target_company }}",
+            "target_website": "={{ $json.target_website }}",
+            "status": "={{ $json.status }}",
+            "started_at": "={{ $json.started_at }}",
+            "industry": "={{ $json.industry }}",
+            "target_market": "={{ $json.target_market }}",
+            "country_or_region": "={{ $json.country_or_region }}",
+            "news_lookback_days": "={{ $json.news_lookback_days }}",
+            "recipient_email": "={{ $json.recipient_email }}",
+            "settings_json": "={{ $json.settings_json }}"
+          },
+          "schema": [
+            {
+              "id": "research_run_id",
+              "displayName": "research_run_id",
+              "type": "string"
+            },
+            {
+              "id": "target_company",
+              "displayName": "target_company",
+              "type": "string"
+            },
+            {
+              "id": "target_website",
+              "displayName": "target_website",
+              "type": "string"
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string"
+            },
+            {
+              "id": "started_at",
+              "displayName": "started_at",
+              "type": "date"
+            },
+            {
+              "id": "completed_at",
+              "displayName": "completed_at",
+              "type": "date"
+            },
+            {
+              "id": "industry",
+              "displayName": "industry",
+              "type": "string"
+            },
+            {
+              "id": "target_market",
+              "displayName": "target_market",
+              "type": "string"
+            },
+            {
+              "id": "country_or_region",
+              "displayName": "country_or_region",
+              "type": "string"
+            },
+            {
+              "id": "news_lookback_days",
+              "displayName": "news_lookback_days",
+              "type": "number"
+            },
+            {
+              "id": "recipient_email",
+              "displayName": "recipient_email",
+              "type": "string"
+            },
+            {
+              "id": "settings_json",
+              "displayName": "settings_json",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {
+          "optimizeBulk": true
+        }
+      }
+    },
+    {
+      "name": "Restore Request Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -784,
+        48
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "return { json: { ...$('Market Research Request Form').first().json } };"
+      }
+    },
+    {
+      "name": "Find Direct Competitors with You.com",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        224,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://ydc-index.io/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ query: \"Find direct competitors of \" + String($json.company_name || \"\") + \" (\" + String($json.company_website || \"\") + \") serving \" + String($json.target_market || \"\") + \" in \" + String($json.industry || \"\") + \" for \" + String($json.country_or_region || \"Global\") + \". Require evidence of product, customer, business-model and geographic overlap. Prefer recent official sources; otherwise credible third-party sources. Return URLs.\", count: 10, freshness: $now.minus({ days: Math.max(1, Number($json.news_lookback_period) || 30) }).toFormat(\"yyyy-MM-dd\") + \"to\" + $now.toFormat(\"yyyy-MM-dd\"), language: \"EN\", safesearch: \"moderate\", extraction: { extraction_mode: \"highlights\" } }) }}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Select Direct Competitors",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        448,
+        0
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "system",
+              "content": "Use only the supplied You.com evidence. Do not use prior knowledge, browse independently, or invent missing details. Select exactly three direct competitors when the supplied evidence materially supports overlap in products or services, target customers, business model, and geography. If fewer than three candidates are sufficiently supported, return only those supported candidates and let the final Word report identify the gap. Treat competitor identification as an inference and require supporting facts from the evidence. Prefer official company sources and the most recent dated sources; use third-party sources only when official evidence is unavailable. Exclude directories, publications, the target company, and weak analogs. When a website is not established by the evidence, write exactly \"not publicly available\". Return only valid compact JSON with this exact shape: {\"competitors\":[{\"name\":\"Company\",\"website\":\"https://company.example or not publicly available\"}]}. Do not use markdown or code fences."
+            },
+            {
+              "type": "text",
+              "role": "user",
+              "content": "=Target company: {{ $(\"Market Research Request Form\").item.json.company_name }}. Website: {{ $(\"Market Research Request Form\").item.json.company_website }}. Industry: {{ $(\"Market Research Request Form\").item.json.industry }}. Customers: {{ $(\"Market Research Request Form\").item.json.target_market }}. Region: {{ $(\"Market Research Request Form\").item.json.country_or_region }}. Supplied You.com evidence: {{ JSON.stringify($json) }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "maxTokens": 1200,
+          "store": false
+        }
+      }
+    },
+    {
+      "name": "Build Competitor Rows",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -112,
+        48
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw = $input.first().json.output?.[0]?.content?.[0]?.text || '{}';\nconst payload = typeof raw === 'string' ? JSON.parse(raw.trim()) : raw;\nconst form = $('Market Research Request Form').first().json;\nreturn (Array.isArray(payload.competitors) ? payload.competitors.slice(0, 3) : []).filter(c => c && c.name).map(c => ({ json: { research_run_id: String($execution.id), target_company: String(form.company_name || ''), competitor_name: String(c.name || ''), competitor_website: String(c.website || 'not publicly available'), pricing: 'not publicly available', features: 'not publicly available', positioning: 'not publicly available', validation_status: 'pending', updated_at: new Date().toISOString() } }));"
+      }
+    },
+    {
+      "name": "Save Competitors",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        112,
+        48
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "89ZMzA9YQJYbktzI",
+          "cachedResultName": "Competitors"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "research_run_id": "={{ $json.research_run_id }}",
+            "target_company": "={{ $json.target_company }}",
+            "competitor_name": "={{ $json.competitor_name }}",
+            "competitor_website": "={{ $json.competitor_website }}",
+            "pricing": "={{ $json.pricing }}",
+            "features": "={{ $json.features }}",
+            "positioning": "={{ $json.positioning }}",
+            "validation_status": "={{ $json.validation_status }}",
+            "updated_at": "={{ $json.updated_at }}"
+          },
+          "schema": [
+            {
+              "id": "research_run_id",
+              "displayName": "research_run_id",
+              "type": "string"
+            },
+            {
+              "id": "target_company",
+              "displayName": "target_company",
+              "type": "string"
+            },
+            {
+              "id": "competitor_name",
+              "displayName": "competitor_name",
+              "type": "string"
+            },
+            {
+              "id": "competitor_website",
+              "displayName": "competitor_website",
+              "type": "string"
+            },
+            {
+              "id": "pricing",
+              "displayName": "pricing",
+              "type": "string"
+            },
+            {
+              "id": "features",
+              "displayName": "features",
+              "type": "string"
+            },
+            {
+              "id": "positioning",
+              "displayName": "positioning",
+              "type": "string"
+            },
+            {
+              "id": "validation_status",
+              "displayName": "validation_status",
+              "type": "string"
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "type": "date"
+            }
+          ]
+        },
+        "options": {
+          "optimizeBulk": true
+        }
+      }
+    },
+    {
+      "name": "Build Per-Competitor Research Queries",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw = $('Select Direct Competitors').first().json.output?.[0]?.content?.[0]?.text || '{}';\nconst cleaned = typeof raw === 'string' ? raw.trim() : raw;\nconst payload = typeof cleaned === 'string' ? JSON.parse(cleaned) : cleaned;\nconst competitors = Array.isArray(payload.competitors) ? payload.competitors.slice(0, 3) : [];\nconst form = $('Market Research Request Form').first().json;\nconst lookbackDays = Math.max(1, Number(form.news_lookback_period) || 30);\nconst topics = [{ category: 'official_products', terms: 'current official website product pages products services', fresh: false }, { category: 'pricing', terms: 'current official pricing plans costs fees', fresh: false }, { category: 'core_features', terms: 'current official core features capabilities solutions', fresh: false }, { category: 'target_customers', terms: 'current official target customers industries clients case studies', fresh: false }, { category: 'market_positioning', terms: 'current official market positioning value proposition competitors', fresh: false }, { category: 'customer_reviews', terms: 'recent customer reviews testimonials G2 Capterra', fresh: false }, { category: 'funding_partnerships_launches_leadership', terms: 'recent official funding partnerships launches leadership press release news', fresh: false }, { category: 'recent_news', terms: 'recent official news announcements launches partnerships leadership', fresh: true }];\nconst output = [];\nfor (const competitor of competitors) { const competitorName = String(competitor.name || '').trim(); if (!competitorName) continue; const competitorWebsite = String(competitor.website || '').trim(); for (const topic of topics) { const sourceGuidance = ' Prefer official and recent sources. Use third-party sources only when official information is not publicly available.'; const query = (competitorName + ' ' + (competitorWebsite === 'not publicly available' ? '' : competitorWebsite) + ' ' + topic.terms + sourceGuidance).trim(); output.push({ json: { research_run_id: String($execution.id), company_name: String(form.company_name || ''), competitor_name: competitorName, competitor_website: competitorWebsite || 'not publicly available', category: topic.category, query, apply_freshness: topic.fresh, lookback_days: lookbackDays, retry_count: 0 } }); } }\nreturn output;"
+      }
+    },
+    {
+      "name": "Research Loop",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        560,
+        48
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "name": "Prepare Search Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        784,
+        48
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "return $input.all().map(item => ({ json: { ...item.json } }));"
+      }
+    },
+    {
+      "name": "Research Each Competitor Topic with You.com",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        896,
+        0
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "https://ydc-index.io/v1/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpTemplatedCustomAuth",
+        "sendBody": true,
+        "contentType": "json",
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.apply_freshness ? { query: String($json.query || \"\"), count: 5, freshness: $now.minus({ days: Math.max(1, Number($json.lookback_days) || 30) }).toFormat(\"yyyy-MM-dd\") + \"to\" + $now.toFormat(\"yyyy-MM-dd\"), language: \"EN\", safesearch: \"moderate\", extraction: { extraction_mode: \"highlights\" } } : { query: String($json.query || \"\"), count: 5, language: \"EN\", safesearch: \"moderate\", extraction: { extraction_mode: \"highlights\" } }) }}",
+        "options": {
+          "timeout": 60000,
+          "batching": {
+            "batch": {
+              "batchSize": 1,
+              "batchInterval": 250
+            }
+          },
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "Attach Research Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1120,
+        0
+      ],
+      "parameters": {
+        "mode": "manual",
+        "assignments": {
+          "assignments": [
+            {
+              "id": "run",
+              "name": "research_run_id",
+              "type": "string",
+              "value": "={{ $(\"Prepare Search Request\").item.json.research_run_id }}"
+            },
+            {
+              "id": "company",
+              "name": "company_name",
+              "type": "string",
+              "value": "={{ $(\"Prepare Search Request\").item.json.company_name }}"
+            },
+            {
+              "id": "competitor",
+              "name": "competitor_name",
+              "type": "string",
+              "value": "={{ $(\"Prepare Search Request\").item.json.competitor_name }}"
+            },
+            {
+              "id": "website",
+              "name": "competitor_website",
+              "type": "string",
+              "value": "={{ $(\"Prepare Search Request\").item.json.competitor_website }}"
+            },
+            {
+              "id": "category",
+              "name": "category",
+              "type": "string",
+              "value": "={{ $(\"Prepare Search Request\").item.json.category }}"
+            },
+            {
+              "id": "query",
+              "name": "query",
+              "type": "string",
+              "value": "={{ $(\"Prepare Search Request\").item.json.query }}"
+            },
+            {
+              "id": "lookback",
+              "name": "lookback_days",
+              "type": "number",
+              "value": "={{ $(\"Prepare Search Request\").item.json.lookback_days }}"
+            },
+            {
+              "id": "retry",
+              "name": "retry_count",
+              "type": "number",
+              "value": "={{ $(\"Prepare Search Request\").item.json.retry_count || 0 }}"
+            },
+            {
+              "id": "results",
+              "name": "search_results",
+              "type": "object",
+              "value": "={{ $json.results || {} }}"
+            }
+          ]
+        },
+        "includeOtherFields": false
+      }
+    },
+    {
+      "name": "Validate Research Evidence",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1456,
+        -32
+      ],
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "system",
+              "content": "Validate one competitor research bundle using only the supplied You.com evidence. Check: (1) every material factual claim has a non-empty supporting URL; (2) pricing evidence is current and from the competitor official domain; (3) news dates fall within the supplied requested window; (4) the company is a direct competitor based on material product, customer, business-model and geographic overlap; (5) facts are clearly separated from interpretations and interpretations are labeled; (6) conflicting sources are explicitly identified with their URLs. Apply pricing and news checks only to relevant categories, marking them true when not applicable. Prefer official and recent evidence. Return only compact valid JSON: {\"complete\":true,\"checks\":{\"claims_have_urls\":true,\"pricing_current_official\":true,\"news_within_period\":true,\"direct_competitor\":true,\"facts_separated_from_interpretations\":true,\"conflicts_identified\":true},\"issues\":[],\"conflicting_sources\":[],\"associated_claims\":[],\"category_summary\":\"\",\"retry_query\":\"\"}. For associated_claims, return an array of objects with claim, url, and kind (fact or interpretation); every fact must use a URL present in the topic evidence. category_summary must be a concise, evidence-grounded summary for the current category and say \"not publicly available\" when unsupported. Set complete false if any applicable check fails. The retry_query must target missing evidence, be under 45 words and under 380 characters."
+            },
+            {
+              "type": "text",
+              "role": "user",
+              "content": "=Target: {{ $(\"Market Research Request Form\").item.json.company_name }}; industry: {{ $(\"Market Research Request Form\").item.json.industry }}; customers: {{ $(\"Market Research Request Form\").item.json.target_market }}; region: {{ $(\"Market Research Request Form\").item.json.country_or_region }}. Candidate: {{ $json.competitor_name }} ({{ $json.competitor_website }}). Category: {{ $json.category }}. Requested window: {{ $now.minus({ days: Number($json.lookback_days) }).toISODate() }} through {{ $now.toISODate() }}. Current query: {{ $json.query }}. Direct-competitor discovery evidence: {{ JSON.stringify($(\"Find Direct Competitors with You.com\").first().json) }}. Topic evidence: {{ JSON.stringify($json.search_results) }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "maxTokens": 1500,
+          "temperature": 0.1,
+          "store": false
+        }
+      }
+    },
+    {
+      "name": "Parse Validation Result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -32
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const raw = $input.item.json.output?.[0]?.content?.[0]?.text || '{}';\nlet validation;\ntry { let text = typeof raw === 'string' ? raw.trim() : raw; if (typeof text === 'string') { const fence = String.fromCharCode(96).repeat(3); if (text.startsWith(fence)) text = text.slice(3).trimStart(); if (text.startsWith('json')) text = text.slice(4).trimStart(); if (text.endsWith(fence)) text = text.slice(0, -3).trimEnd(); const firstBrace = text.indexOf('{'); const lastBrace = text.lastIndexOf('}'); if (firstBrace >= 0 && lastBrace > firstBrace) text = text.slice(firstBrace, lastBrace + 1); validation = JSON.parse(text); } else validation = text; } catch (error) { validation = { complete: false, checks: {}, issues: ['Validator returned invalid JSON'], conflicting_sources: [], retry_query: '' }; }\nconst context = $('Attach Research Context').item.json;\nconst retryCount = Math.max(0, Number(context.retry_count) || 0);\nconst complete = validation.complete === true;\nconst issues = Array.isArray(validation.issues) ? validation.issues.map(String) : [];\nreturn { json: { ...context, validation_complete: complete, validation_status: complete ? 'complete' : (retryCount >= 2 ? 'incomplete_after_retries' : 'incomplete'), validation_issues: issues, validation_checks: validation.checks || {}, conflicting_sources: Array.isArray(validation.conflicting_sources) ? validation.conflicting_sources : [], associated_claims: Array.isArray(validation.associated_claims) ? validation.associated_claims : [], category_summary: String(validation.category_summary || 'not publicly available'), retry_query: String(validation.retry_query || ''), retry_count: retryCount, ready_to_store: complete || retryCount >= 2 } };"
+      }
+    },
+    {
+      "name": "Research Complete?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1904,
+        -32
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ready",
+              "leftValue": "={{ $json.ready_to_store }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Get Competitor Record",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2128,
+        -80
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "89ZMzA9YQJYbktzI",
+          "cachedResultName": "Competitors"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "research_run_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.research_run_id }}"
+            },
+            {
+              "keyName": "competitor_name",
+              "condition": "eq",
+              "keyValue": "={{ $json.competitor_name }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1
+      }
+    },
+    {
+      "name": "Build Competitor Update",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2352,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const current = $input.item.json;\nconst validated = $('Parse Validation Result').item.json;\nconst summary = String(validated.category_summary || 'not publicly available');\nlet pricing = String(current.pricing || 'not publicly available');\nlet features = String(current.features || 'not publicly available');\nlet positioning = String(current.positioning || 'not publicly available');\nif (validated.category === 'pricing') pricing = summary;\nif (validated.category === 'core_features' || validated.category === 'official_products') features = summary;\nif (validated.category === 'market_positioning') positioning = summary;\nreturn { json: { research_run_id: String(validated.research_run_id), competitor_name: String(validated.competitor_name), pricing, features, positioning, validation_status: String(validated.validation_status || 'incomplete'), updated_at: new Date().toISOString() } };"
+      }
+    },
+    {
+      "name": "Update Competitor Record",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2576,
+        -80
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "89ZMzA9YQJYbktzI",
+          "cachedResultName": "Competitors"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "research_run_id",
+              "condition": "eq",
+              "keyValue": "={{ $json.research_run_id }}"
+            },
+            {
+              "keyName": "competitor_name",
+              "condition": "eq",
+              "keyValue": "={{ $json.competitor_name }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "pricing": "={{ $json.pricing }}",
+            "features": "={{ $json.features }}",
+            "positioning": "={{ $json.positioning }}",
+            "validation_status": "={{ $json.validation_status }}",
+            "updated_at": "={{ $json.updated_at }}"
+          },
+          "schema": [
+            {
+              "id": "pricing",
+              "displayName": "pricing",
+              "type": "string"
+            },
+            {
+              "id": "features",
+              "displayName": "features",
+              "type": "string"
+            },
+            {
+              "id": "positioning",
+              "displayName": "positioning",
+              "type": "string"
+            },
+            {
+              "id": "validation_status",
+              "displayName": "validation_status",
+              "type": "string"
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "type": "date"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "name": "Restore Validated Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2800,
+        -80
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "return { json: { ...$('Parse Validation Result').item.json } };"
+      }
+    },
+    {
+      "name": "Normalize Research Results",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1344,
+        0
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const output = [];\nfor (const item of $input.all()) { const context = item.json; const results = context.search_results || {}; const sections = [{ sourceType: 'web', rows: Array.isArray(results.web) ? results.web : [] }, { sourceType: 'news', rows: Array.isArray(results.news) ? results.news : [] }]; for (const section of sections) { for (const result of section.rows) { const highlights = Array.isArray(result.contents?.highlights) ? result.contents.highlights : []; const snippets = Array.isArray(result.snippets) ? result.snippets : []; const excerptParts = []; if (result.description) excerptParts.push(String(result.description)); if (snippets.length) excerptParts.push(snippets.join(' ')); if (highlights.length) excerptParts.push(highlights.join(' ')); output.push({ json: { research_run_id: String(context.research_run_id || ''), competitor_name: String(context.competitor_name || ''), category: String(context.category || ''), source_type: section.sourceType, source_url: String(result.url || ''), source_title: String(result.title || ''), source_date: String(result.page_age || result.published_at || result.date || 'not publicly available'), excerpt: excerptParts.join(' ').slice(0, 5000), associated_claims: JSON.stringify((Array.isArray(context.associated_claims) ? context.associated_claims : []).filter(c => !c.url || String(c.url) === String(result.url || ''))), retrieved_at: new Date().toISOString(), validation_status: String(context.validation_status || 'incomplete'), validation_issues: Array.isArray(context.validation_issues) ? context.validation_issues.join(' | ') : String(context.validation_issues || ''), validation_checks_json: JSON.stringify(context.validation_checks || {}), conflicting_sources: JSON.stringify(context.conflicting_sources || []), retry_count: Number(context.retry_count || 0) } }); } } }\nreturn output;"
+      }
+    },
+    {
+      "name": "Save Evidence",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3248,
+        112
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "umucluU6S7xpOYEz",
+          "cachedResultName": "Evidence"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "research_run_id": "={{ $json.research_run_id }}",
+            "competitor_name": "={{ $json.competitor_name }}",
+            "category": "={{ $json.category }}",
+            "source_type": "={{ $json.source_type }}",
+            "source_url": "={{ $json.source_url }}",
+            "source_title": "={{ $json.source_title }}",
+            "source_date": "={{ $json.source_date }}",
+            "excerpt": "={{ $json.excerpt }}",
+            "associated_claims": "={{ $json.associated_claims }}",
+            "validation_status": "={{ $json.validation_status }}",
+            "validation_issues": "={{ $json.validation_issues }}",
+            "validation_checks_json": "={{ $json.validation_checks_json }}",
+            "conflicting_sources": "={{ $json.conflicting_sources }}",
+            "retry_count": "={{ $json.retry_count }}",
+            "retrieved_at": "={{ $json.retrieved_at }}"
+          },
+          "schema": [
+            {
+              "id": "research_run_id",
+              "displayName": "research_run_id",
+              "type": "string"
+            },
+            {
+              "id": "competitor_name",
+              "displayName": "competitor_name",
+              "type": "string"
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "type": "string"
+            },
+            {
+              "id": "source_type",
+              "displayName": "source_type",
+              "type": "string"
+            },
+            {
+              "id": "source_url",
+              "displayName": "source_url",
+              "type": "string"
+            },
+            {
+              "id": "source_title",
+              "displayName": "source_title",
+              "type": "string"
+            },
+            {
+              "id": "source_date",
+              "displayName": "source_date",
+              "type": "string"
+            },
+            {
+              "id": "excerpt",
+              "displayName": "excerpt",
+              "type": "string"
+            },
+            {
+              "id": "associated_claims",
+              "displayName": "associated_claims",
+              "type": "string"
+            },
+            {
+              "id": "validation_status",
+              "displayName": "validation_status",
+              "type": "string"
+            },
+            {
+              "id": "validation_issues",
+              "displayName": "validation_issues",
+              "type": "string"
+            },
+            {
+              "id": "validation_checks_json",
+              "displayName": "validation_checks_json",
+              "type": "string"
+            },
+            {
+              "id": "conflicting_sources",
+              "displayName": "conflicting_sources",
+              "type": "string"
+            },
+            {
+              "id": "retry_count",
+              "displayName": "retry_count",
+              "type": "number"
+            },
+            {
+              "id": "retrieved_at",
+              "displayName": "retrieved_at",
+              "type": "date"
+            }
+          ]
+        },
+        "options": {
+          "optimizeBulk": true
+        }
+      }
+    },
+    {
+      "name": "Build Validation Retry Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2128,
+        144
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "language": "javaScript",
+        "jsCode": "const item = $input.item.json;\nconst fallback = item.competitor_name + ' ' + item.category + ' current official source URL evidence';\nconst requested = String(item.retry_query || fallback).trim();\nconst query = requested.split(' ').filter(Boolean).slice(0, 45).join(' ').slice(0, 380);\nreturn { json: { research_run_id: String(item.research_run_id || ''), company_name: String(item.company_name || ''), competitor_name: String(item.competitor_name || ''), competitor_website: String(item.competitor_website || 'not publicly available'), category: String(item.category || ''), query, apply_freshness: item.category === 'recent_news', lookback_days: Number(item.lookback_days || 30), retry_count: Number(item.retry_count || 0) + 1 } };"
+      }
+    },
+    {
+      "name": "Get Report Competitors",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        -320
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "89ZMzA9YQJYbktzI",
+          "cachedResultName": "Competitors"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "research_run_id",
+              "condition": "eq",
+              "keyValue": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "name": "Get Report Evidence",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        -32
+      ],
+      "executeOnce": true,
+      "alwaysOutputData": true,
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "umucluU6S7xpOYEz",
+          "cachedResultName": "Evidence"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "research_run_id",
+              "condition": "eq",
+              "keyValue": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "name": "Build Report Context",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1232,
+        -320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const form = $('Market Research Request Form').first().json;\nconst competitors = $('Get Report Competitors').all().map(item => item.json).filter(row => row && row.competitor_name);\nconst evidenceRows = $input.all().map(item => item.json).filter(row => row && row.source_url);\nconst expectedCategories = ['official_products', 'pricing', 'core_features', 'target_customers', 'market_positioning', 'customer_reviews', 'funding_partnerships_launches_leadership', 'recent_news'];\nconst exactlyThree = competitors.length === 3;\nconst allCategoriesPresent = exactlyThree && competitors.every(competitor => expectedCategories.every(category => evidenceRows.some(row => String(row.competitor_name) === String(competitor.competitor_name) && String(row.category) === category)));\nconst uniqueEvidence = [];\nconst seen = new Set();\nfor (const row of evidenceRows) { const url = String(row.source_url || '').trim(); if (!url || seen.has(url)) continue; seen.add(url); uniqueEvidence.push({ source_id: 'S' + (uniqueEvidence.length + 1), competitor_name: String(row.competitor_name || ''), category: String(row.category || ''), source_type: String(row.source_type || ''), source_url: url, source_title: String(row.source_title || ''), source_date: String(row.source_date || 'not publicly available'), excerpt: String(row.excerpt || '').slice(0, 1200), associated_claims: String(row.associated_claims || '[]'), validation_status: String(row.validation_status || 'incomplete'), validation_issues: String(row.validation_issues || ''), validation_checks_json: String(row.validation_checks_json || '{}'), conflicting_sources: String(row.conflicting_sources || '[]'), retry_count: Number(row.retry_count || 0) }); }\nconst successfulRecords = uniqueEvidence.filter(row => row.validation_status === 'complete');\nconst failedRecords = uniqueEvidence.filter(row => row.validation_status !== 'complete');\nconst context = { research_run_id: String($execution.id), target_company: String(form.company_name || ''), target_website: String(form.company_website || ''), industry: String(form.industry || ''), target_market: String(form.target_market || ''), country_or_region: String(form.country_or_region || ''), news_lookback_days: Math.max(1, Number(form.news_lookback_period) || 30), report_date: new Date().toISOString().slice(0, 10), competitors: competitors.map(row => ({ name: String(row.competitor_name || ''), website: String(row.competitor_website || 'not publicly available'), pricing: String(row.pricing || 'not publicly available'), features: String(row.features || 'not publicly available'), positioning: String(row.positioning || 'not publicly available'), validation_status: String(row.validation_status || 'incomplete') })), successful_records: successfulRecords, failed_or_incomplete_records: failedRecords, evidence: uniqueEvidence };\nreturn [{ json: { report_ready: allCategoriesPresent && failedRecords.length === 0, competitor_count: competitors.length, evidence_count: evidenceRows.length, successful_record_count: successfulRecords.length, failed_record_count: failedRecords.length, report_context_json: JSON.stringify(context) } }];"
+      }
+    },
+    {
+      "name": "Generate Competitive Report",
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1680,
+        -416
+      ],
+      "executeOnce": true,
+      "retryOnFail": true,
+      "parameters": {
+        "resource": "text",
+        "operation": "response",
+        "modelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4o-mini",
+          "cachedResultName": "GPT-4O-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "type": "text",
+              "role": "system",
+              "content": "Produce one decision-ready competitive market research report using only the supplied evidence. Include both successful validation records and failed or incomplete validation records. Do not browse, use prior knowledge, or invent details. Separate facts from interpretations and label interpretations explicitly. Never present failed or incomplete evidence as verified: mark every affected statement or table cell with \"[Failed/Incomplete validation]\", state the validation issues and retry count, and retain conflicting-source warnings. Ground every material factual claim with one or more supplied source IDs in square brackets, such as [S4]. Use \"not publicly available\" whenever the evidence does not support a requested detail. Prefer recent official sources; identify material conflicts rather than resolving them without evidence. Recent market developments must fall inside the supplied lookback period. Include these sections in this exact order: Executive summary; Successful validation records; Failed or incomplete validation records; Competitor comparison table; Pricing comparison; Feature comparison; Positioning analysis; Recent market developments; Competitive risks; Opportunities for differentiation; Recommended actions; Source list. The two validation-record sections must list each record with competitor, category, validation status, source ID, and source URL; the failed section must also include validation issues and retry count. Include the overall validation status for each competitor in the comparison table. Use concise Markdown that converts cleanly into a Microsoft Word-compatible document. The comparison, pricing, and feature sections must each contain a readable Markdown table. In the Source list, include every cited source ID, title, date, competitor, and full URL. Never cite a source ID that is absent from the supplied evidence."
+            },
+            {
+              "type": "text",
+              "role": "user",
+              "content": "=Research context with successful and failed records: {{ $json.report_context_json }}"
+            }
+          ]
+        },
+        "simplify": true,
+        "options": {
+          "maxTokens": 7000,
+          "temperature": 0.1,
+          "store": false
+        }
+      }
+    },
+    {
+      "name": "Prepare Word Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1680,
+        -272
+      ],
+      "executeOnce": true,
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw = $input.first().json.output?.[0]?.content?.[0]?.text || '';\nconst report = typeof raw === 'string' ? raw.trim() : JSON.stringify(raw, null, 2);\nconst form = $('Market Research Request Form').first().json;\nconst context = $('Build Report Context').first().json;\nconst title = 'Competitive Market Research - ' + String(form.company_name || 'Company') + ' - ' + new Date().toISOString().slice(0, 10);\nconst safeName = title.replace(/[^a-zA-Z0-9._ -]/g, '').replace(/\\s+/g, '_');\nconst escapeRtf = (value) => String(value).replace(/\\\\/g, '\\\\\\\\').replace(/\\{/g, '\\\\{').replace(/\\}/g, '\\\\}').replace(/[^\\x20-\\x7E]/g, character => '\\\\u' + character.charCodeAt(0) + '?');\nconst lines = report.split(/\\r?\\n/);\nconst rtfLines = lines.map(line => { const text = String(line); if (/^###\\s+/.test(text)) return '\\\\par \\\\b\\\\fs24 ' + escapeRtf(text.replace(/^###\\s+/, '')) + '\\\\b0\\\\fs22'; if (/^##\\s+/.test(text)) return '\\\\par \\\\b\\\\fs28 ' + escapeRtf(text.replace(/^##\\s+/, '')) + '\\\\b0\\\\fs22'; if (/^#\\s+/.test(text)) return '\\\\par \\\\b\\\\fs32 ' + escapeRtf(text.replace(/^#\\s+/, '')) + '\\\\b0\\\\fs22'; if (/^[-*]\\s+/.test(text)) return '\\\\par \\bullet\\tab ' + escapeRtf(text.replace(/^[-*]\\s+/, '')); return '\\\\par ' + escapeRtf(text.replace(/\\*\\*/g, '')); });\nconst rtfContent = '{\\\\rtf1\\\\ansi\\\\deff0{\\\\fonttbl{\\\\f0 Calibri;}}\\\\viewkind4\\\\uc1\\\\fs22 \\\\b\\\\fs36 ' + escapeRtf(title) + '\\\\b0\\\\fs22 ' + rtfLines.join('') + '}';\nconst status = context.report_ready ? 'completed' : 'completed_with_gaps';\nreturn [{ json: { title, file_name: safeName + '.rtf', rtf_content: rtfContent, completion_status: status } }];"
+      }
+    },
+    {
+      "name": "Create Word-Compatible File",
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1904,
+        -272
+      ],
+      "executeOnce": true,
+      "parameters": {
+        "operation": "toBinary",
+        "sourceProperty": "rtf_content",
+        "binaryPropertyName": "data",
+        "options": {
+          "dataIsBase64": false,
+          "encoding": "utf8",
+          "fileName": "={{ $json.file_name }}",
+          "mimeType": "application/rtf"
+        }
+      }
+    },
+    {
+      "name": "Complete Research Run",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1008,
+        -224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "3iWyWWRNT2sDFLeN",
+          "cachedResultName": "Research Runs"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "research_run_id",
+              "condition": "eq",
+              "keyValue": "={{ $execution.id }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "={{ $(\"Prepare Word Report\").first().json.completion_status }}",
+            "completed_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "type": "string"
+            },
+            {
+              "id": "completed_at",
+              "displayName": "completed_at",
+              "type": "date"
+            }
+          ]
+        },
+        "options": {}
+      }
+    }
+  ],
+  "connections": {
+    "Market Research Request Form": {
+      "main": [
+        [
+          {
+            "node": "Build Research Run Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Research Run Record": {
+      "main": [
+        [
+          {
+            "node": "Create Research Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Research Run": {
+      "main": [
+        [
+          {
+            "node": "Restore Request Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Request Context": {
+      "main": [
+        [
+          {
+            "node": "Find Direct Competitors with You.com",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Direct Competitors with You.com": {
+      "main": [
+        [
+          {
+            "node": "Select Direct Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Direct Competitors": {
+      "main": [
+        [
+          {
+            "node": "Build Competitor Rows",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Competitor Rows": {
+      "main": [
+        [
+          {
+            "node": "Save Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Competitors": {
+      "main": [
+        [
+          {
+            "node": "Build Per-Competitor Research Queries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Per-Competitor Research Queries": {
+      "main": [
+        [
+          {
+            "node": "Research Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Loop": {
+      "main": [
+        [
+          {
+            "node": "Get Report Competitors",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Search Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Search Request": {
+      "main": [
+        [
+          {
+            "node": "Research Each Competitor Topic with You.com",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Each Competitor Topic with You.com": {
+      "main": [
+        [
+          {
+            "node": "Attach Research Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach Research Context": {
+      "main": [
+        [
+          {
+            "node": "Validate Research Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Research Evidence": {
+      "main": [
+        [
+          {
+            "node": "Parse Validation Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Validation Result": {
+      "main": [
+        [
+          {
+            "node": "Research Complete?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Research Complete?": {
+      "main": [
+        [
+          {
+            "node": "Get Competitor Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Validation Retry Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Competitor Record": {
+      "main": [
+        [
+          {
+            "node": "Build Competitor Update",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Competitor Update": {
+      "main": [
+        [
+          {
+            "node": "Update Competitor Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Competitor Record": {
+      "main": [
+        [
+          {
+            "node": "Restore Validated Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Restore Validated Context": {
+      "main": [
+        [
+          {
+            "node": "Normalize Research Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Research Results": {
+      "main": [
+        [
+          {
+            "node": "Save Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Evidence": {
+      "main": [
+        [
+          {
+            "node": "Research Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Validation Retry Query": {
+      "main": [
+        [
+          {
+            "node": "Prepare Search Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Report Competitors": {
+      "main": [
+        [
+          {
+            "node": "Get Report Evidence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Report Evidence": {
+      "main": [
+        [
+          {
+            "node": "Build Report Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Report Context": {
+      "main": [
+        [
+          {
+            "node": "Generate Competitive Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Competitive Report": {
+      "main": [
+        [
+          {
+            "node": "Prepare Word Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Word Report": {
+      "main": [
+        [
+          {
+            "node": "Create Word-Compatible File",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Complete Research Run",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}
